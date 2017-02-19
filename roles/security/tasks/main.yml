@@ -1,0 +1,4 @@
+---
+- include: secure_base.yml
+- include: secure_root.yml
+- include: secure_ssh.yml

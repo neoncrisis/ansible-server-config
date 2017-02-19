@@ -1,0 +1,35 @@
+---
+- hosts: all
+  become_user: root
+  become: true
+  vars_files:
+    - vault.yml
+  roles:
+    - security
+    - docker
+    - nginx-proxy
+    - nextcloud
+
+# TODO: single DB container for all apps (nextcloud + wordpress)
+# TODO: automatic DB snapshots
+
+# Grsecurity kernel?
+# noexec on tmpfs (fstab)
+# disable ipv6?
+# Intrusion detection
+# Rootkit detection (rkhunter,  chkrootkit)
+  # - Default configuration might be fine
+# Monit
+  # - Check timestamps/checksums of critical files
+  # - Keep SSH and other services running
+# sendmail
+  # - I think it is already configured
+# Tripwire???
+# ecryptfs-utils??
+
+# nextcloud docker container (HTTP)
+# nginx ssl proxy (80, 443)
+# force 80 to 443
+# nginx - buffer file updloads???
+# nginx Fail2Ban
+# nginx logwatch

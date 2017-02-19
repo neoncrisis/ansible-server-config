@@ -1,0 +1,88 @@
+---
+
+- name: Install NextCloud DB
+  docker_image:
+    name: mariadb:latest
+    state: present
+
+- name: Install Nextcloud
+  docker_image:
+    name: wonderfall/nextcloud:11.0
+    state: present
+
+# - name: Install Collabora
+#   docker_image:
+#     name: collabora/code
+#     state: present
+#
+# - name: Collabora nginx config
+#   template:
+#     src: nginx.conf/collabora.conf
+#     dest: /etc/nginx/conf.d/collabora.conf
+#     owner: root
+#     group: root
+#     mode: 0644
+
+- name: Start NextCloud DB
+  docker_container:
+    name: db_nextcloud
+    image: mariadb
+    state: started
+    restart_policy: always
+    volumes:
+      - "{{ backup.database }}:/var/lib/mysql"
+    env:
+      MYSQL_ROOT_PASSWORD: "{{ mysql.root_password }}"
+      MYSQL_DATABASE: "{{ nextcloud.database }}"
+      MYSQL_USER: "{{ nextcloud.database_user }}"
+      MYSQL_PASSWORD: "{{ nextcloud.database_password }}"
+  register: db_nextcloud
+
+- name: Wait for the database container
+  pause: seconds=15
+  when: db_nextcloud is defined and
+        db_nextcloud.changed
+
+# - name: Start Collabora
+#   docker_container:
+#     name: collabora
+#     image: collabora/code
+#     state: started
+#     restart_policy: always
+#     privileged: true
+#     capabilities:
+#       - MKNOD
+#     ports:
+#       - 9980:9980
+#     env:
+#       username: admin
+#       password: admin
+#       domain: office.superluminal.me
+
+- name: Start nextcloud
+  docker_container:
+    name: nextcloud
+    image: wonderfall/nextcloud
+    state: started
+    restart_policy: always
+    links:
+      - db_nextcloud:db_nextcloud
+    volumes:
+      - "{{ backup.nextcloud_config }}:/config"
+      - "{{ backup.nextcloud_data }}:/data"
+      - "{{ backup.nextcloud_apps }}:/apps2"
+    env:
+      VIRTUAL_HOST: "{{ nextcloud.domain }}"
+      UPLOAD_MAX_SIZE: 1G
+      APC_SHM_SIZE: 128M
+      OPCACHE_MEM_SIZE: 128
+      REDIS_MAX_MEMORY: 64mb
+      CRON_PERIOD: 15m
+      TZ: Etc/UTC
+      ADMIN_USER: "{{ nextcloud.admin_user }}"
+      ADMIN_PASSWORD: "{{ nextcloud.admin_password }}"
+      DB_TYPE: mysql
+      DB_NAME: "{{ nextcloud.database }}"
+      DB_USER: "{{ nextcloud.database_user }}"
+      DB_PASSWORD: "{{ nextcloud.database_password }}"
+      DB_HOST: db_nextcloud

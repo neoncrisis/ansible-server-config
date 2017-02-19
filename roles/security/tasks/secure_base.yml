@@ -1,0 +1,65 @@
+---
+- name: Update cache
+  apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+# TODO: fstab -- tmpfs on /dev/shm type tmpfs (rw,nosuid,nodev)
+# TODO: /etc/security/limits.conf -- deploy hard nproc 100
+
+# Setup unattended updates
+- name: Unattended updates
+  apt:
+    name: unattended-upgrades
+    state: present
+- name: Configure periodic updates
+  template:
+    src: apt.conf.d/10periodic
+    dest: /etc/apt/apt.conf.d/10periodic
+    owner: root
+    group: root
+    mode: 0644
+- name: Configure unattended upgrades
+  template:
+    src: apt.conf.d/50unattended-upgrades
+    dest: /etc/apt/apt.conf.d/50unattended-upgrades
+    owner: root
+    group: root
+    mode: 0644
+
+# Install Logwatch
+- name: Logwatch
+  apt:
+    name: logwatch
+    state: present
+- name: Configure logwatch
+  template:
+    src: cron.daily/00logwatch
+    dest: /etc/cron.daily/
+    owner: root
+    group: root
+    mode: 0555
+
+# Install fail2ban
+- name: Fail2Ban
+  apt:
+    name: fail2ban
+    state: present
+- name: Fail2Ban configure
+  template:
+    src: fail2ban/jail.local
+    dest: /etc/fail2ban/jail.local
+    owner: root
+    group: root
+    mode: 0644
+  notify: "restart fail2ban"
+
+# Install UFW
+- name: UFW
+  apt:
+    name: ufw
+    state: present
+- name: UFW deny all
+  ufw:
+    policy: deny
+    state: enabled

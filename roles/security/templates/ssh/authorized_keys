@@ -1,0 +1,3 @@
+{% for pub_key in ssh.public_keys %}
+{{ lookup('file', pub_key) }}
+{% endfor %}

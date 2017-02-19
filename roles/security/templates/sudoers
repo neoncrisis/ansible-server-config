@@ -1,0 +1,28 @@
+##
+## Cmnd alias specification
+##
+## Groups of commands.  Often used to group related commands together.
+# Cmnd_Alias	PROCESSES = /usr/bin/nice, /bin/kill, /usr/bin/renice, \
+# 			    /usr/bin/pkill, /usr/bin/top
+# Cmnd_Alias	REBOOT = /sbin/halt, /sbin/reboot, /sbin/poweroff
+
+Defaults	env_reset
+Defaults	mail_badpass
+Defaults	secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
+
+## Uncomment to enable logging of a command's output, except for
+## sudoreplay and reboot.  Use sudoreplay to play back logged sessions.
+# Defaults log_output
+# Defaults!/usr/bin/sudoreplay !log_output
+# Defaults!/usr/local/bin/sudoreplay !log_output
+# Defaults!REBOOT !log_output
+
+##
+## User privilege specification
+##
+root ALL=(ALL) ALL
+{{ user.name }} ALL=(ALL) ALL
+
+## Read drop-in files from /etc/sudoers.d
+## (the '#' here does not indicate a comment)
+#includedir /etc/sudoers.d

@@ -1,0 +1,21 @@
+---
+
+# Setup ssh configuration
+- name: Setup /etc/ssh/sshd_config
+  template:
+    src: ssh/sshd_config
+    dest: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: 0644
+  notify: "restart sshd"
+
+# Allow SSH connections
+# TODO: UFW should only allow SSH from jumpbox ip
+- name: Open SSH port {{ ssh.port }}
+  ufw: rule=allow port={{ ssh.port }}
+  notify: "restart ufw"
+
+# Ensure handlers are done before continuing
+- name: Ensure SSH is reloaded
+  meta: flush_handlers

@@ -1,0 +1,60 @@
+---
+
+# Creates group for non-root user
+- name: Create {{ user.group }} group
+  group:
+    name: "{{ user.group }}"
+    state: present
+
+# Creates a non-root user to enable SSH login
+# Needed because root is not permitted to login via SSH
+- name: Create {{ user.name }} user
+  user:
+    name: "{{ user.name }}"
+    groups: "{{ user.group }}"
+    password: "{{ user.password | password_hash('sha512') }}"
+    shell: "{{ user.shell }}"
+    home: "{{ user.home }}"
+
+# Ensure that only root and {{ deploy_user }} can sudo
+- name: Restrict sudoers
+  template:
+    src: sudoers
+    dest: /etc/sudoers
+    owner: root
+    group: root
+    mode: 0400
+
+# Add directory holding SSH configuration
+- name: SSH directory
+  file:
+    path: "{{ user.home }}/.ssh/"
+    state: directory
+    owner: "{{ user.name }}"
+    group: "{{ user.group }}"
+    mode: 0700
+
+# Add SSH key to authorized keys
+# Deletes existing keys and prevents further writes to the file
+- name: "{{ user.name }} authorized key"
+  template:
+    src: ssh/authorized_keys
+    dest: "{{ user.home }}/.ssh/authorized_keys"
+    owner: "{{ user.name }}"
+    group: "{{ user.group }}"
+    mode: 0400
+
+# Remove any root account keys
+- name: Remove root authorized keys
+  file:
+    path: /root/.ssh/authorized_keys
+    state: absent
+
+# Lock down root ssh folder
+- name: Prevent /root/.ssh/ write
+  file:
+    path: /root/.ssh/
+    state: directory
+    owner: root
+    group: root
+    mode: 0000

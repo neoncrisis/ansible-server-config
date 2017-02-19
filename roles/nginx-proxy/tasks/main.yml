@@ -1,0 +1,50 @@
+---
+
+- name: Install nginx
+  docker_image:
+    name: neoncrisis/nginx-autoreload:latest
+    state: present
+    pull: true
+  register: nginx_proxy
+
+- name: Install nginx manager
+  docker_image:
+    name: neoncrisis/nginx-config-manager:latest
+    state: present
+    pull: true
+  register: nginx_manager
+
+- name: Start nginx
+  docker_container:
+    name: nginx-proxy
+    image: neoncrisis/nginx-autoreload:latest
+    state: started
+    restart: "{{ nginx_proxy.changed }}"
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - "/tmp/letsencrypt:/tmp/letsencrypt"
+      - "/etc/nginx/conf.d:/etc/nginx/conf.d"
+      - "{{ backup.letsencrypt }}:/etc/letsencrypt"
+
+- name: Start nginx manager
+  docker_container:
+    name: nginx-manager
+    image: neoncrisis/nginx-config-manager:latest
+    state: started
+    restart: "{{ nginx_manager.changed }}"
+    env:
+      EMAIL: "{{ letsencrypt.email }}"
+    volumes:
+      - "/var/run/docker.sock:/tmp/docker.sock:ro"
+      - "/tmp/letsencrypt:/tmp/letsencrypt"
+      - "/etc/nginx/conf.d:/etc/nginx/conf.d"
+      - "{{ backup.letsencrypt }}:/etc/letsencrypt"
+
+- ufw: rule=allow port=80
+- ufw: rule=allow port=443
+
+# nginx - buffer file uploads???
+# nginx Fail2Ban
+# nginx logwatch

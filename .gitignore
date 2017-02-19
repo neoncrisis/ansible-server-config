@@ -1,0 +1,6 @@
+digitalocean
+vault.yml
+*.retry
+*.log
+boxes/*
+/.vagrant
